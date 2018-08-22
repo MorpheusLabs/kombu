@@ -14,7 +14,11 @@ import sys
 from contextlib import contextmanager
 from itertools import count, repeat
 from time import sleep
-from uuid import UUID, uuid4 as _uuid4, _uuid_generate_random
+from uuid import UUID, uuid4
+try:
+    from uuid import _uuid_generate_random
+except ImportError:
+    _uuid_generate_random = None
 
 from .encoding import safe_repr as _safe_repr
 
@@ -114,19 +118,17 @@ def say(m, *s):
     sys.stderr.write(str(m) % s + '\n')
 
 
-def uuid4():
-    # Workaround for http://bugs.python.org/issue4607
-    if ctypes and _uuid_generate_random:  # pragma: no cover
+if ctypes and _uuid_generate_random:  # pragma: no cover
+    def uuid4():
+        # Workaround for http://bugs.python.org/issue4607
         buffer = ctypes.create_string_buffer(16)
         _uuid_generate_random(buffer)
         return UUID(bytes=buffer.raw)
-    return _uuid4()
 
 
 def uuid():
     """Generate a unique id, having - hopefully - a very small chance of
     collision.
-
     For now this is provided by :func:`uuid.uuid4`.
     """
     return str(uuid4())
